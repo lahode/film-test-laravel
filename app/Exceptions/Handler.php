@@ -46,7 +46,7 @@ class Handler extends ExceptionHandler
     {
         $this->renderable(function (Throwable $e) {
             if ($e instanceof ApiException) {
-                Log::info('test');
+                //Log::info('test');
                 return response(
                   [
                     'success' => false,
@@ -54,6 +54,15 @@ class Handler extends ExceptionHandler
                   ], $e->getCode() ?: 400
                 );
             }
+            if ($e instanceof ValidateException) {
+                return response(
+                    [
+                      'success' => false,
+                      'message' => json_decode($e->getMessage()),
+                    ], $e->getCode() ?: 400
+                );
+            }
+
         });
     }
 }

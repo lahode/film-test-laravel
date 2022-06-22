@@ -5,8 +5,11 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Film;
+use App\Models\Category;
 use App\Exceptions\ApiException;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Validator;
+use App\Exceptions\ValidateException;
 
 class FilmController extends Controller
 {
@@ -42,17 +45,42 @@ class FilmController extends Controller
      */
     public function store(Request $request)
     {
-        $category = Category::find($request->input('category_id'));
+        try {
+            $validatorRules = [
+                'title' => 'required|string|max:256',
+                'year' => 'required|digits:4|integer|min:1900|max:'.(date('Y')+1),
+                'description' => 'nullable|string',
+                'category_id' => 'integer|digits_between:1,20|required'
+            ];
 
-        $film = new Film();
-        $film->title = $request->input('title');
-        $film->year = $request->input('year');
-        $film->description = $request->input('description');
-        $film->category_id = $category->id;
+            // Validate fields.
+            $validator = Validator::make($request->all(), $validatorRules);
 
-        $film->save();
+            // If validation fails
+            // Return error messages and exit.
+            if ($validator->fails()) {
+                throw (new ValidateException(
+                    $validator->errors()
+                ));
+            }
 
-        return $film;
+
+
+            $category = Category::find($request->input('category_id'));
+
+            $film = new Film();
+            $film->title = $request->input('title');
+            $film->year = $request->input('year');
+            $film->description = $request->input('description');
+            $film->category_id = $category->id;
+
+            $film->save();
+
+            return $film;
+        }
+        catch(\Exception $e) {
+            throw $e;
+        }
     }
 
     /**
