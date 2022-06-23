@@ -10,9 +10,14 @@ use App\Exceptions\ApiException;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use App\Exceptions\ValidateException;
+use App\Http\Services\FilmService;
+use App\Http\Resources\FilmCollection;
 
 class FilmController extends Controller
 {
+
+    public function __construct(private FilmService $_filmService) {}
+
     /**
      * Display a listing of the resource.
      *
@@ -20,7 +25,8 @@ class FilmController extends Controller
      */
     public function index()
     {
-        return Film::all();
+        $films = Film::all();
+        return new FilmCollection($films);
 
 
         /*
@@ -46,37 +52,8 @@ class FilmController extends Controller
     public function store(Request $request)
     {
         try {
-            $validatorRules = [
-                'title' => 'required|string|max:256',
-                'year' => 'required|digits:4|integer|min:1900|max:'.(date('Y')+1),
-                'description' => 'nullable|string',
-                'category_id' => 'integer|digits_between:1,20|required'
-            ];
 
-            // Validate fields.
-            $validator = Validator::make($request->all(), $validatorRules);
-
-            // If validation fails
-            // Return error messages and exit.
-            if ($validator->fails()) {
-                throw (new ValidateException(
-                    $validator->errors()
-                ));
-            }
-
-
-
-            $category = Category::find($request->input('category_id'));
-
-            $film = new Film();
-            $film->title = $request->input('title');
-            $film->year = $request->input('year');
-            $film->description = $request->input('description');
-            $film->category_id = $category->id;
-
-            $film->save();
-
-            return $film;
+            return $this->_filmService->storeFilm(null);
         }
         catch(\Exception $e) {
             throw $e;
@@ -115,17 +92,7 @@ class FilmController extends Controller
      */
     public function update(Request $request, $id)
     {
-        $category = Category::find($request->input('category_id'));
-
-        $film = Film::find($id);
-        $film->title = $request->input('title');
-        $film->year = $request->input('year');
-        $film->description = $request->input('description');
-        $film->category_id = $category->id;
-
-        $film->save();
-
-        return $film;
+        return $this->_filmService->storeFilm($id);
     }
 
     /**
